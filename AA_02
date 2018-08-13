@@ -1,0 +1,50 @@
+1	Variable Operation: True To $Flag_Looping$
+2	Loop While $Flag_Looping$ Equal To (=) "True" 
+3	     Comment: Please enter your commands to loop.
+4	     Comment:                                 ######################## Copyright © 2010 by Genpact Digital. $ All Rights Reserved ########################
+5	     Comment: ######################## This Robot belongs to RA Team. A written permission is required before any kind of use/change. ########################
+6	     Comment:                                                             ######################## SAP Login Function ########################
+7	     Variable Operation: $AAApplicationPath$\Automation Anywhere\My Tasks\PTP_IP\IPFoldersLocation.txt To $V_File_FAFoldersLocation$
+8	     Read From Text File: "$V_File_FAFoldersLocation$" Delimiter: 'NewLine' Header: 'No' Trim Leading Space: "No" Trim Trailing Space: "No" Session: 'FAFoldersLocationSession'
+9	     Comment: INITIALIZING AND CHECKING ALL THE REQUIRED VARIABLE AND FILE\FOLDERS=START===========================
+10	     Start Loop "Each row in a CSV/Text file of Session: FAFoldersLocationSession"
+11	          If $Filedata Column(1)$ Includes "V_FolderPath_Error" Then  
+12	               String Operation: Before-After "$Filedata Column(1)$"; Before: "V_FolderPath_Error="; After: "[ENTER]" and assign output to $V_FolderPath_Errors$
+13	          End If
+14	          If $Filedata Column(1)$ Includes "V_FolderPath_Input" Then  
+15	               String Operation: Before-After "$Filedata Column(1)$"; Before: "V_FolderPath_Input="; After: "[ENTER]" and assign output to $V_FolderPath_Input$
+16	          End If
+17	          If $Filedata Column(1)$ Includes "V_FolderPath_Logs" Then  
+18	               String Operation: Before-After "$Filedata Column(1)$"; Before: "V_FolderPath_Logs="; After: "[ENTER]" and assign output to $V_FolderPath_Logs$
+19	          End If
+20	     End Loop
+21	     Variable Operation: $V_FolderPath_Logs$\Logs_$Day$_$Month$_$Year$.txt To $V_File_Logs$
+22	     Comment: ######################## Store OCR File Data into DataBase Table=PTP_IP_OCR_Data ########################
+23	     Open Folder "\\Client\D$\PTP_IP_OCR_Files"
+24	     Start Loop "Each File In Folder \\Client\D$\PTP_IP_OCR_Files"
+25	          If $Extension$ Equal To (=) "csv" Then  
+26	               Connect to "$V_ConnectionString$" Session:'MySqlDb'
+27	               Read From CSV file: "\\Client\D$\PTP_IP_OCR_Files\$FileName$.$Extension$" Delimiter: "Comma" Header: "Yes" Trim Leading Space: "No" Trim Trailing Space: "No" Session: 'OCRDataFiole'
+28	               Start Loop "Each row in a CSV/Text file of Session: OCRDataFiole"
+29	                    If $Filedata Column(17)$ Greater than(>) "0" Then  
+30	                         Variable Operation: $Filedata Column(17)$ To $V_Quantity$
+31	                    Else
+32	                         Variable Operation: 0 To $V_Quantity$
+33	                    End If
+34	                    Variable Operation: INSERT INTO PTP_IP_OCR_Data (ReportDate, UserID, Image_Name, Savvion_ID, Invoice_Number, Invoice_Date, PO_Number, Vat_Amount, Total_Amount, Currency, Vat_ID, Vendor_Name, Vendor_Code, StampDate, VendorBankAccountNo, CustomerVATID, BillToParty, [Description], Quantity, UnitPrice, NetAmount, DeliveryNote, Vendor, Company_code, Country, VendorAddress, City, PO_Box, PO_Box_pcd, Post_Code, Street, Telephone_1, VAT_RegNo, Email, Rejection_Reason, Comments) VALUES (|$Date$|, |$System(USERNAME)$|, |$Filedata Column(1)$|, |$Filedata Column(2)$|, |$Filedata Column(3)$|, |$Filedata Column(4)$|, |$Filedata Column(5)$|, $Filedata Column(6)$, $Filedata Column(7)$, |$Filedata Column(8)$|, |$Filedata Column(9)$|, |$Filedata Column(10)$|, |$Filedata Column(11)$|, |$Filedata Column(12)$|, |$Filedata Column(13)$|, |$Filedata Column(14)$|, |$Filedata Column(15)$|, |$Filedata Column(16)$|, $V_Quantity$, $Filedata Column(18)$, $Filedata Column(19)$, |$Filedata Column(20)$|, |$Filedata Column(21)$|, |$Filedata Column(22)$|, |$Filedata Column(23)$|, |$Filedata Column(24)$|, |$Filedata Column(25)$|, |$Filedata Column(26)$|, |$Filedata Column(27)$|, |$Filedata Column(28)$|, |$Filedata Column(29)$|, |$Filedata Column(30)$|, |$Filedata Column(31)$|, |$Filedata Column(32)$|, |$Filedata Column(33)$|, |$Filedata Column(34)$|) To $V_Query$
+35	                    String Operation: Replace "'" with "''" in "$V_Query$" and assign output to $V_Query$ 
+36	                    String Operation: Replace "||" with "NULL" in "$V_Query$" and assign output to $V_Query$ 
+37	                    String Operation: Replace "|" with "'" in "$V_Query$" and assign output to $V_Query$ 
+38	                    Loop While $V_Query$ Includes ", ," 
+39	                         String Operation: Replace ", ," with ", NULL," in "$V_Query$" and assign output to $V_Query$ 
+40	                    End Loop
+41	                    Execute SQL Statement: '$V_Query$'  Session: 'MySqlDb'
+42	               End Loop
+43	               Disconnect from database Session:'MySqlDb'
+44	               Copy Files "\\Client\D$\PTP_IP_OCR_Files\$FileName$.$Extension$" to "$V_FolderPath_Input$\$FileName$.$Extension$"  
+45	               Delete Files "\\Client\D$\PTP_IP_OCR_Files\$FileName$.$Extension$" 
+46	          End If
+47	     End Loop
+48	     Close Window: "PTP_IP_OCR_Files"
+49	     Delay: (3600 sec)
+50	End Loop
