@@ -1,0 +1,88 @@
+1	Variable Operation: \\divsfs001.beerdivision.africa.gcn.local\CitrixPublic$\RapidAutomation\AB_PTP_IP_SA\Dev\Config To $V_FolderPath_Config$
+2	Variable Operation: \\divsfs001.beerdivision.africa.gcn.local\CitrixPublic$\RapidAutomation\AB_PTP_IP_SA\Dev\Errors To $V_FolderPath_Errors$
+3	Variable Operation: \\divsfs001.beerdivision.africa.gcn.local\CitrixPublic$\RapidAutomation\AB_PTP_IP_SA\Dev\Logs To $V_FolderPath_Logs$
+4	Variable Operation: \\divsfs001.beerdivision.africa.gcn.local\CitrixPublic$\RapidAutomation\AB_PTP_IP_SA\Dev\Temp To $V_FolderPath_Temp$
+5	Variable Operation: $AAApplicationPath$\Automation Anywhere\My Tasks\PTP_IP\IPFoldersLocation.txt To $V_File_FAFoldersLocation$
+6	Read From Text File: "$V_File_FAFoldersLocation$" Delimiter: 'NewLine' Header: 'No' Trim Leading Space: "No" Trim Trailing Space: "No" Session: 'FAFoldersLocationSession'
+7	Comment: INITIALIZING AND CHECKING ALL THE REQUIRED VARIABLE AND FILE\FOLDERS=START===========================
+8	Start Loop "Each row in a CSV/Text file of Session: FAFoldersLocationSession"
+9	     If $Filedata Column(1)$ Includes "V_FolderPath_Config" Then  
+10	          String Operation: Before-After "$Filedata Column(1)$"; Before: "V_FolderPath_Config="; After: "[ENTER]" and assign output to $V_FolderPath_Config$
+11	     End If
+12	     If $Filedata Column(1)$ Includes "V_FolderPath_Error" Then  
+13	          String Operation: Before-After "$Filedata Column(1)$"; Before: "V_FolderPath_Error="; After: "[ENTER]" and assign output to $V_FolderPath_Errors$
+14	     End If
+15	     If $Filedata Column(1)$ Includes "V_FolderPath_Input" Then  
+16	          String Operation: Before-After "$Filedata Column(1)$"; Before: "V_FolderPath_Input="; After: "[ENTER]" and assign output to $V_FolderPath_Input$
+17	     End If
+18	     If $Filedata Column(1)$ Includes "V_FolderPath_Temp" Then  
+19	          String Operation: Before-After "$Filedata Column(1)$"; Before: "V_FolderPath_Temp="; After: "[ENTER]" and assign output to $V_FolderPath_Temp$
+20	     End If
+21	     If $Filedata Column(1)$ Includes "V_FolderPath_Logs" Then  
+22	          String Operation: Before-After "$Filedata Column(1)$"; Before: "V_FolderPath_Logs="; After: "[ENTER]" and assign output to $V_FolderPath_Logs$
+23	     End If
+24	     If $Filedata Column(1)$ Includes "V_FolderPath_Output" Then  
+25	          String Operation: Before-After "$Filedata Column(1)$"; Before: "V_FolderPath_Output="; After: "[ENTER]" and assign output to $V_FolderPath_Output$
+26	     End If
+27	End Loop
+28	If $V_FolderPath_Logs$ Equal To (=) "" Then  
+29	Stop The Current Task
+30	End If
+31	Variable Operation: True To $Flag_TaskStatus$
+32	Variable Operation: $V_FolderPath_Logs$\Logs_$Day$_$Month$_$Year$.txt To $V_File_Logs$
+33	Variable Operation: $V_FolderPath_Config$\SapLoginLink.txt To $V_FA_SapLoginLink$
+34	Begin Error Handling; Action: Continue; Options: Take Snapshot, Log to File, Variable Assignment,  Task Status: Fail
+35	     Comment: INITIALIZING AND CHECKING ALL THE REQUIRED VARIABLE AND FILE\FOLDERS=END===========================
+36	     Comment: **************************************************************************************************************************************************************************
+37	     Comment: TRYINGING TO LOGIN INTO SAP=START===========================
+38	     Log to File: SUCCESS:TASK START-Sap_Login in "$V_File_Logs$"
+39	     If File Does Not Exist ("$V_FA_SapLoginLink$")  Then  
+40	          Message Box: "ERROR: $V_FA_SapLoginLink$ Sap Link not found at the location."
+41	          Log to File: ERROR:TASK $V_FolderPath_Config$ Sap Link not found at the location. in "$File_Logs$"
+42	          Stop The Current Task
+43	     End If
+44	     Read From Text File: "$V_FA_SapLoginLink$" Delimiter: 'NewLine' Header: 'No' Trim Leading Space: "No" Trim Trailing Space: "No" Session: 'LinkMapperSession'
+45	     Start Loop "Each row in a CSV/Text file of Session: LinkMapperSession"
+46	          If $Filedata Column(1)$ Includes "V_FA_SapLoginLink=" Then  
+47	               String Operation: Before-After "$Filedata Column(1)$"; Before: "V_FA_SapLoginLink="; After: "[ENTER]" and assign output to $V_FA_SapLoginLink$
+48	          End If
+49	     End Loop
+50	     Variable Operation: Fail To $Flag_SapLoginWindowOpen$
+51	     Log to File: SUCCESS:Opening SAP Login Link - $V_FA_SapLoginLink$ in "$V_File_Logs$"
+52	     Open "$V_FA_SapLoginLink$"
+53	     Loop While $Flag_SapLoginWindowOpen$ Equal To (=) "Fail" 
+54	          If Window Exists ("*SAP NetWeaver Portal*")  Then  (Wait up to 15 seconds - for Window to exist) 
+55	          Log to File: SUCCESS:SAP window found - *SAP NetWeaver Portal* in "$V_File_Logs$"
+56	          Variable Operation: Pass To $Flag_SapLoginWindowOpen$
+57	          Continue
+58	          End If
+59	          Wait for Window to Open ("SAP NetWeaver Portal*") (Wait up to 30 seconds - For Window to Open)
+60	          If Window Exists ("SAP NetWeaver Portal*")  Then  
+61	               Log to File: SUCCESS:SAP Login window found - SAP NetWeaver Portal* in "$V_File_Logs$"
+62	               Message Box: "4"
+63	               Log to File: SUCCESS:Entering SAP Login Credential in - SAP NetWeaver Portal* in "$V_File_Logs$"
+64	               Object Cloning: Set Text of TextBox "j_username" in window 'SAP NetWeaver Portal - Internet Explorer'; Value:"$AB_PTP_IP_SA(V_SAP_DevUserID1)$"; Source: Window; Play Type: Object
+65	               Object Cloning: Set Text of TextBox "j_password" in window 'SAP NetWeaver Portal - Internet Explorer'; Value: "**********************************" ; Source: Windows; Play Type: Object 
+66	               Object Cloning: Click On PushButton "uidPasswordLogon" in window 'SAP NetWeaver Portal - Internet Explorer'; Click Type: Click; Source: Window; Play Type: Object
+67	               Variable Operation: Pass To $Flag_SapLoginWindowOpen$
+68	          End If
+69	          If Window Exists ("SAP Logon*")  Then  (Wait up to 10 seconds - for Window to exist) 
+70	               Minimize Window: "SAP Logon*"
+71	          End If
+72	          If Window Exists ("*SAP NetWeaver Portal*")  Then  (Wait up to 15 seconds - for Window to exist) 
+73	               Log to File: SUCCESS:SAP window found - *SAP NetWeaver Portal* in "$V_File_Logs$"
+74	               Message Box: "1"
+75	               Variable Operation: Pass To $Flag_SapLoginWindowOpen$
+76	               Continue
+77	          End If
+78	          If $Counter$ Equal To (=) "3" Then  
+79	               Message Box: "2"
+80	               Variable Operation: Pass To $Flag_SapLoginWindowOpen$
+81	          End If
+82	     End Loop
+83	     Log to File: SUCCESS:TASK END-Sap_Login in "$V_File_Logs$"
+84	     Comment: TRYINGING TO LOGIN INTO SAP=END===========================
+85	End Error Handling
+86	If $Flag_TaskStatus$ Includes "Fail" Then  
+87	End If
+88	Message Box: "Please run the master task..."
